@@ -51,12 +51,15 @@ func GetUser(c *fiber.Ctx) error {
 }
 func DeleteUser(c *fiber.Ctx) error {
 
-	userID := c.Params("usr-del-id")
+	userID := c.Params("userID")
 
-	err := model.DeleteUser(userID)
+	res, err := model.DeleteUser(userID)
 	if err != nil {
-		lib.Log().Warn("Server database error", zap.Error(err))
+		lib.Log().Warn("Server database error", zap.Int("error", res))
 		return c.Status(fiber.StatusInternalServerError).JSON(lib.JSONError("We can't response with correctly! Please ask to administrator"))
+	}
+	if res < 1 {
+		return c.Status(fiber.StatusNotFound).JSON(lib.JSONSuccess("User not found"))
 	}
 
 	return c.Status(fiber.StatusOK).JSON(lib.JSONSuccess("User deleted"))

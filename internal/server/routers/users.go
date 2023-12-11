@@ -10,5 +10,5 @@ func RegisterUserRouter(router fiber.Router) {
 	router.Get("/user/list", controller.GetUsers)
 	router.Get("/user/:username", controller.GetUser)
 	router.Post("/user/create", controller.CreateUser)
-	router.Delete("/:userID", controller.DeleteUser)
+	router.Delete("/user/:userID", controller.DeleteUser)
 }

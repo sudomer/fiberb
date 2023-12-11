@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	ErrUserAlreadyExist error = errors.New("")
+	ErrUserAlreadyExist error = errors.New("user already exist")
 )
 
 type User struct {
@@ -64,12 +64,13 @@ func GetUser(username string) (User, error) {
 	return usr, nil
 }
 
-func DeleteUser(_id string) error {
-	_, err := DB_USERS.DeleteOne(context.Background(), bson.M{"_id": _id})
+func DeleteUser(username string) (int, error) {
+	res, err := DB_USERS.DeleteOne(context.Background(), bson.D{{"username", username}})
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+
+	return int(res.DeletedCount), nil
 }
 
 func (usr User) CreateUser() (string, error) {
