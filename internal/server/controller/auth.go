@@ -14,8 +14,7 @@ func Login(c *fiber.Ctx) error {
 
 	err := c.BodyParser(&auth)
 	if err != nil {
-		lib.Log().Error("Requested body is in wrong form", zap.String("controller", "login"))
-		return c.Status(fiber.ErrBadRequest.Code).JSON(lib.JSONError("Please check your login data!"))
+		return c.Status(fiber.ErrBadRequest.Code).JSON(lib.JSONError("Please check your credentials!"))
 	}
 
 	resp, err := auth.Login()
@@ -23,11 +22,12 @@ func Login(c *fiber.Ctx) error {
 	if err != nil {
 		switch err.Error() {
 		case model.ErrUserNotFound:
-			lib.Log().Error("User not found", zap.String("controller", "login"))
 			return c.Status(fiber.ErrBadRequest.Code).JSON(lib.JSONError("OOPS! User not found."))
 		case model.ErrWrongPassword:
-			lib.Log().Error("Wrong password", zap.String("controller", "login"), zap.String("username", auth.Username))
 			return c.Status(fiber.ErrBadRequest.Code).JSON(lib.JSONError("OOPS! Wrong password."))
+		default:
+			lib.Log().Error("Unkown error", zap.String("controller", "login"), zap.String("username", auth.Username), zap.Error(err))
+			return c.Status(fiber.ErrBadRequest.Code).JSON(lib.JSONError("OOPS! error occurred."))
 		}
 
 	}
@@ -36,26 +36,33 @@ func Login(c *fiber.Ctx) error {
 }
 
 func Register(c *fiber.Ctx) error {
-	auth := model.Auth{}
 
 	valid := validator.New()
 	var usr model.User
 
 	err := c.BodyParser(&usr)
 	if err != nil {
-		lib.Log().Error("Requested body is in wrong form", zap.String("controller", "register"))
+		lib.Log().Error("Requested body is in wrong form",
+			zap.String("controller", "register"),
+			zap.Any("body", c.Body()),
+		)
 		return c.Status(fiber.ErrBadRequest.Code).JSON(lib.JSONError("Please check your register data!"))
 	}
 
 	if err = valid.Struct(usr); err != nil {
-		lib.Log().Warn("Client requested illegal form", zap.Error(err))
+		lib.Log().Warn("Client requested illegal form",
+			zap.Error(err),
+			zap.Any("body", c.Body()),
+		)
 		return c.Status(fiber.ErrBadRequest.Code).JSON(lib.JSONError("OOOPS! Please check your form data for user create"))
 	}
-	resp, err := auth.Register(usr)
+	resp, err := usr.CreateUser()
 	if err != nil {
-		lib.Log().Error("Register not working", zap.String("controller", "register"))
-		return c.Status(fiber.ErrInternalServerError.Code).JSON(lib.JSONError("Please ask to administrator for register form!"))
+		switch err {
+		case model.ErrUserAlreadyExist:
+			lib.Log().Error("User registration process failed.", zap.String("controller", "register"), zap.Error(err))
+			return c.Status(fiber.ErrInternalServerError.Code).JSON(lib.JSONError("User already exist."))
+		}
 	}
-
 	return c.Status(fiber.StatusOK).JSON(lib.JSONSuccess(resp))
 }

@@ -36,7 +36,7 @@ func GetUsers(c *fiber.Ctx) error {
 }
 func GetUser(c *fiber.Ctx) error {
 	username := c.Params("username")
-
+	lib.Log().Warn("", zap.String("", username))
 	res, err := model.GetUser(username)
 	if err != nil {
 		lib.Log().Warn("Server database error", zap.Error(err))
@@ -44,7 +44,7 @@ func GetUser(c *fiber.Ctx) error {
 	}
 
 	if len(res.Username) < 1 {
-		lib.Log().Warn("User not found", zap.Error(err))
+		lib.Log().Warn("User not found", zap.Error(err), zap.Any("Result", res))
 		return c.Status(fiber.StatusBadRequest).JSON(lib.JSONError("We can't find user"))
 	}
 	return c.Status(fiber.StatusOK).JSON(res)

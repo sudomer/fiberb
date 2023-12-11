@@ -19,7 +19,7 @@ const (
 
 func (auth Auth) Login() (string, error) {
 	var usr User
-	err := DB_USERS.FindOne(context.TODO(), bson.M{"username": auth.Username}).Decode(&usr)
+	err := DB_USERS.FindOne(context.Background(), bson.M{"username": auth.Username}).Decode(&usr)
 	if err != nil {
 		return ErrUserNotFound, err
 	}
@@ -27,17 +27,5 @@ func (auth Auth) Login() (string, error) {
 	if err != nil {
 		return ErrWrongPassword, err
 	}
-	return "success", nil
-}
-
-func (auth Auth) Register(usr User) (string, error) {
-	usr.Username = auth.Username
-	usr.Password = auth.Password
-
-	resp, err := usr.CreateUser()
-	if err != nil {
-		return "user not created", err
-	}
-
-	return resp, nil
+	return usr.Email, nil
 }
